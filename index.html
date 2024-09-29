@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload File Excel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f8f9fa;
+        }
+        .upload-container {
+            border: 2px solid #007bff;
+            padding: 30px;
+            border-radius: 10px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="upload-container">
+        <h1 class="text-center mb-4">Tải file Excel lên</h1>
+        <input type="file" id="fileInput" accept=".xlsx" class="form-control mb-3">
+        <div class="d-grid">
+            <button id="uploadButton" class="btn btn-primary">Tải lên</button>
+        </div>
+       
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        document.getElementById('uploadButton').addEventListener('click', function() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Vui lòng chọn file Excel để tải lên.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+
+                // Khai báo các mảng để lưu dữ liệu
+                const columnData1 = []; // Cột 9 (index 8)
+                const columnData2 = []; // Cột 10 (index 9)
+                const columnData3 = []; // Cột 12 (index 11)
+                const columnData4 = []; // Cột 3 (index 2)
+                const columnData6 = []; // Cột 7 (index 6)
+
+                // Lấy dữ liệu từ sheet đầu tiên
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+
+                // Xử lý dữ liệu
+                for (let rowIndex = 0; rowIndex < jsonData.length; rowIndex++) {
+                    const row = jsonData[rowIndex];
+
+                    // Cột 9 (index 8)
+                    if (row[8] !== undefined) {
+                        columnData1.push(row[8]);
+                    }
+
+                    // Cột 10 (index 9)
+                    if (row[9] !== undefined) {
+                        columnData2.push(row[9]);
+                    }
+
+                    // Cột 12 (index 11)
+                    if (row[11] !== undefined) {
+                        columnData3.push(row[11]);
+                    }
+
+                    // Cột 3 (index 2)
+                    if (row[2] !== undefined) {
+                        columnData4.push(row[2]);
+                    }
+
+                    // Cột 7 (index 6) - Bắt đầu từ hàng thứ 2
+                    if (rowIndex > 0 && row[6] !== undefined) {
+                        columnData6.push(parseInt(row[6])); // Chuyển đổi thành số nguyên
+                    }
+                }
+
+                // Tạo file Excel mới
+                const newWorkbook = XLSX.utils.book_new();
+                const newData = [];
+
+                // Tạo tiêu đề cho file mới
+                // newData.push(['Cột 9', 'Cột 10', 'Cột 12', 'Cột 3', 'Cột 5', 'Cột 6', 'Cột 7', 'Cột 8']);
+                
+                for (let i = 0; i < columnData1.length; i++) {
+                    const newRow = [];
+                    newRow.push(columnData1[i] || '');
+                    newRow.push(columnData2[i] || '');
+                    newRow.push(columnData3[i] || '');
+                    newRow.push(columnData4[i] || '');
+                    newRow.push(1); // Giá trị cố định là 1
+                    newRow.push(4); // Giá trị cố định là 4
+                    newRow.push(i > 0 ? columnData6[i - 1] || 0 : ''); // Chỉ ghi từ hàng thứ 2
+                    newRow.push(newRow[6] || ''); // Sao chép giá trị cột 7 sang cột 8
+                    newData.push(newRow);
+                }
+
+                // Ghi dữ liệu vào worksheet
+                const newWorksheet = XLSX.utils.aoa_to_sheet(newData);
+                XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, "Dữ liệu mới");
+
+                // Xuất file Excel mới
+                XLSX.writeFile(newWorkbook, 'du_lieu_moi.xlsx');
+            };
+            reader.readAsArrayBuffer(file);
+        });
+    </script>
+</body>
+</html>
